@@ -1,12 +1,10 @@
 [versions]
 android-application = "8.9.0"
 kotlin-android = "2.1.20"
-xposed-api = "82"
-xposed-api-sources = "82:sources"
+libxposed-api = "102.0.0"
 
 [libraries]
-xposed-api = { group = "de.robv.android.xposed", name = "api", version.ref = "xposed-api" }
-xposed-api-sources = { group = "de.robv.android.xposed", name = "api", version.ref = "xposed-api-sources" }
+libxposed-api = { group = "io.github.libxposed", name = "api", version.ref = "libxposed-api" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-application" }

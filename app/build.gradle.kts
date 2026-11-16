@@ -17,10 +17,15 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = File(projectDir, "release-keystore.jks")
-            storePassword = System.getenv("storePassword")
-            keyAlias = System.getenv("keyAlias")
-            keyPassword = System.getenv("keyPassword")
+            val storePass = System.getenv("storePassword")
+            if (!storePass.isNullOrEmpty()) {
+                storeFile = File(projectDir, "release-keystore.jks")
+                storePassword = storePass
+                keyAlias = System.getenv("keyAlias")
+                keyPassword = System.getenv("keyPassword")
+            } else {
+                initWith(getByName("debug"))
+            }
         }
     }
 
@@ -49,6 +54,5 @@ android {
 }
 
 dependencies {
-    compileOnly(libs.xposed.api)
-    compileOnly(libs.xposed.api.sources)
+    compileOnly(libs.libxposed.api)
 }
