@@ -43,11 +43,26 @@ class MainHook : XposedModule() {
             it.name == "requestAudioFocus"
         }
 
-        if (methods.isEmpty()) return
-
         for (method in methods) {
             hookRequestAudioFocus(method)
         }
+
+        val duckMethods = mediaFocusControlClass.declaredMethods.filter {
+            it.name == "duckPlayers" || it.name == "unduckPlayers"
+        }
+        for (method in duckMethods) {
+            hookNoOp(method)
+        }
+
+        try {
+            val pamClass = Class.forName("com.android.server.audio.PlaybackActivityMonitor", true, classLoader)
+            val pamDuckMethods = pamClass.declaredMethods.filter {
+                it.name == "duckPlayers" || it.name == "unduckPlayers"
+            }
+            for (method in pamDuckMethods) {
+                hookNoOp(method)
+            }
+        } catch (_: Throwable) {}
 
         isHooked = true
     }
@@ -62,16 +77,30 @@ class MainHook : XposedModule() {
         try {
             hook(method)
                 .setExceptionMode(ExceptionMode.PROTECTIVE)
-                .intercept { chain ->
-                    val audioAttrs = chain.args.getOrNull(0) as? AudioAttributes
-                    if (audioAttrs?.usage == AudioAttributes.USAGE_VOICE_COMMUNICATION) {
-                        chain.proceed()
-                    } else {
-                        AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-                    }
+                .intercept {
+                    AudioManager.AUDIOFOCUS_REQUEST_GRANTED
                 }
         } catch (_: Throwable) {
             // Hook failure fallback
         }
+    }
+
+    private fun hookNoOp(method: Method) {
+        try {
+            deoptimize(method)
+        } catch (_: Throwable) {}
+
+        try {
+            hook(method)
+                .setExceptionMode(ExceptionMode.PROTECTIVE)
+                .intercept {
+                    val returnType = method.returnType
+                    when {
+                        returnType == java.lang.Boolean.TYPE -> false
+                        returnType == java.lang.Integer.TYPE -> 0
+                        else -> null
+                    }
+                }
+        } catch (_: Throwable) {}
     }
 }
